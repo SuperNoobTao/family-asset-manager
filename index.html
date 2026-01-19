@@ -1,0 +1,1653 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="theme-color" content="#4CAF50" />
+        <title>家庭资产管理</title>
+        <link rel="manifest" href="manifest.json" />
+        <link rel="apple-touch-icon" href="icon-192.png" />
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    sans-serif;
+                background: #f5f7fa;
+                min-height: 100vh;
+                color: #333;
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+
+            header {
+                background: linear-gradient(135deg, #4caf50, #45b7d1);
+                color: white;
+                padding: 30px 20px;
+                text-align: center;
+                border-radius: 0 0 20px 20px;
+                margin-bottom: 30px;
+                box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            }
+
+            header h1 {
+                font-size: 28px;
+                margin-bottom: 10px;
+            }
+
+            .total-assets {
+                font-size: 36px;
+                font-weight: bold;
+            }
+
+            .sync-status {
+                font-size: 12px;
+                margin-top: 10px;
+                opacity: 0.9;
+            }
+
+            .sync-status.synced {
+                color: #81c784;
+            }
+
+            .sync-status.syncing {
+                color: #ffd54f;
+            }
+
+            .sync-status.offline {
+                color: #ef9a9a;
+            }
+
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 15px;
+                margin-bottom: 30px;
+            }
+
+            .stat-card {
+                background: white;
+                padding: 20px;
+                border-radius: 12px;
+                text-align: center;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+                transition: transform 0.2s;
+            }
+
+            .stat-card:hover {
+                transform: translateY(-3px);
+            }
+
+            .stat-card h3 {
+                color: #666;
+                font-size: 14px;
+                margin-bottom: 8px;
+            }
+
+            .stat-card .value {
+                font-size: 24px;
+                font-weight: bold;
+                color: #4caf50;
+            }
+
+            .stat-card.by-person .value {
+                color: #2196f3;
+            }
+
+            .section {
+                background: white;
+                border-radius: 12px;
+                padding: 20px;
+                margin-bottom: 20px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            }
+
+            .section-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid #eee;
+            }
+
+            .section-header h2 {
+                font-size: 20px;
+                color: #333;
+            }
+
+            .btn {
+                padding: 10px 20px;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 14px;
+                transition: all 0.2s;
+            }
+
+            .btn-primary {
+                background: #4caf50;
+                color: white;
+            }
+
+            .btn-primary:hover {
+                background: #45a049;
+            }
+
+            .btn-danger {
+                background: #f44336;
+                color: white;
+            }
+
+            .btn-danger:hover {
+                background: #da190b;
+            }
+
+            .btn-secondary {
+                background: #e0e0e0;
+                color: #333;
+            }
+
+            .btn-secondary:hover {
+                background: #bdbdbd;
+            }
+
+            .btn-outline {
+                background: transparent;
+                border: 1px solid #4caf50;
+                color: #4caf50;
+            }
+
+            .btn-outline:hover {
+                background: #4caf50;
+                color: white;
+            }
+
+            .asset-table {
+                width: 100%;
+                border-collapse: collapse;
+                overflow-x: auto;
+            }
+
+            .asset-table th,
+            .asset-table td {
+                padding: 12px 15px;
+                text-align: left;
+                border-bottom: 1px solid #eee;
+            }
+
+            .asset-table th {
+                background: #f8f9fa;
+                font-weight: 600;
+                color: #555;
+                position: sticky;
+                top: 0;
+            }
+
+            .asset-table tr:hover {
+                background: #f5f5f5;
+            }
+
+            .asset-table .amount {
+                font-weight: bold;
+                color: #4caf50;
+            }
+
+            .asset-table .rate {
+                color: #ff9800;
+            }
+
+            .tag {
+                display: inline-block;
+                padding: 4px 10px;
+                border-radius: 20px;
+                font-size: 12px;
+                font-weight: 500;
+            }
+
+            .tag-me {
+                background: #e3f2fd;
+                color: #1976d2;
+            }
+            .tag-dad {
+                background: #fff3e0;
+                color: #f57c00;
+            }
+            .tag-grandpa {
+                background: #f3e5f5;
+                color: #7b1fa2;
+            }
+            .tag-mom {
+                background: #e8f5e9;
+                color: #388e3c;
+            }
+
+            .tag-cz {
+                background: #e3f2fd;
+                color: #1565c0;
+            }
+            .tag-ht {
+                background: #fff3e0;
+                color: #ef6c00;
+            }
+            .tag-hr {
+                background: #fce4ec;
+                color: #c2185b;
+            }
+            .tag-sy {
+                background: #e8f5e9;
+                color: #2e7d32;
+            }
+            .tag-wd {
+                background: #e0f7fa;
+                color: #00838f;
+            }
+            .tag-ns {
+                background: #f3e5f5;
+                color: #6a1b9a;
+            }
+            .tag-wx {
+                background: #e8f5e9;
+                color: #388e3c;
+            }
+            .tag-other {
+                background: #eceff1;
+                color: #546e7a;
+            }
+
+            .tag-save {
+                background: #e8f5e9;
+                color: #2e7d32;
+            }
+            .tag-demand {
+                background: #e3f2fd;
+                color: #1565c0;
+            }
+            .tag-debt {
+                background: #ffebee;
+                color: #c62828;
+            }
+            .tag-invest {
+                background: #fff8e1;
+                color: #f9a825;
+            }
+
+            .actions {
+                display: flex;
+                gap: 8px;
+            }
+
+            .actions .btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .form-group {
+                margin-bottom: 15px;
+            }
+
+            .form-group label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 500;
+                color: #555;
+            }
+
+            .form-group input,
+            .form-group select {
+                width: 100%;
+                padding: 12px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                font-size: 14px;
+                transition: border-color 0.2s;
+            }
+
+            .form-group input:focus,
+            .form-group select:focus {
+                outline: none;
+                border-color: #4caf50;
+            }
+
+            .form-row {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .modal {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 1000;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .modal.active {
+                display: flex;
+            }
+
+            .modal-content {
+                background: white;
+                border-radius: 12px;
+                padding: 30px;
+                width: 90%;
+                max-width: 500px;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+
+            .modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+            }
+
+            .modal-header h2 {
+                font-size: 20px;
+            }
+
+            .close-btn {
+                background: none;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+                color: #999;
+            }
+
+            .modal-footer {
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                margin-top: 20px;
+            }
+
+            .empty-state {
+                text-align: center;
+                padding: 40px;
+                color: #999;
+            }
+
+            .chart-container {
+                height: 300px;
+                display: flex;
+                align-items: flex-end;
+                justify-content: space-around;
+                padding: 20px 0;
+            }
+
+            .chart-bar {
+                width: 60px;
+                background: linear-gradient(to top, #4caf50, #81c784);
+                border-radius: 8px 8px 0 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-end;
+                color: white;
+                font-weight: bold;
+                font-size: 12px;
+                padding-bottom: 10px;
+                transition: height 0.3s;
+            }
+
+            .chart-label {
+                margin-top: 10px;
+                font-size: 12px;
+                color: #666;
+            }
+
+            .auth-container {
+                max-width: 400px;
+                margin: 100px auto;
+                padding: 40px;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+                text-align: center;
+            }
+
+            .auth-container h1 {
+                margin-bottom: 30px;
+                color: #4caf50;
+            }
+
+            .auth-tabs {
+                display: flex;
+                margin-bottom: 20px;
+                border-bottom: 2px solid #eee;
+            }
+
+            .auth-tab {
+                flex: 1;
+                padding: 15px;
+                border: none;
+                background: none;
+                cursor: pointer;
+                font-size: 16px;
+                color: #999;
+                transition: all 0.2s;
+            }
+
+            .auth-tab.active {
+                color: #4caf50;
+                border-bottom: 2px solid #4caf50;
+                margin-bottom: -2px;
+            }
+
+            .user-info {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+
+            .user-email {
+                font-size: 14px;
+                color: rgba(255, 255, 255, 0.9);
+            }
+
+            .loading {
+                text-align: center;
+                padding: 40px;
+            }
+
+            .spinner {
+                width: 40px;
+                height: 40px;
+                border: 3px solid #f3f3f3;
+                border-top: 3px solid #4caf50;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 20px;
+            }
+
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .alert {
+                padding: 12px 20px;
+                border-radius: 8px;
+                margin-bottom: 15px;
+                font-size: 14px;
+            }
+
+            .alert-error {
+                background: #ffebee;
+                color: #c62828;
+            }
+
+            .alert-success {
+                background: #e8f5e9;
+                color: #2e7d32;
+            }
+
+            @media (max-width: 768px) {
+                .container {
+                    padding: 10px;
+                }
+
+                header {
+                    padding: 20px 15px;
+                    border-radius: 0 0 15px 15px;
+                }
+
+                header h1 {
+                    font-size: 22px;
+                }
+
+                .total-assets {
+                    font-size: 28px;
+                }
+
+                .section {
+                    padding: 15px;
+                }
+
+                .asset-table {
+                    font-size: 14px;
+                }
+
+                .asset-table th,
+                .asset-table td {
+                    padding: 8px 10px;
+                }
+
+                .actions {
+                    flex-direction: column;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>加载中...</p>
+            </div>
+
+            <div id="authPage" style="display: none">
+                <div class="auth-container">
+                    <h1>🏠 家庭资产管理</h1>
+                    <div class="auth-tabs">
+                        <button
+                            class="auth-tab active"
+                            onclick="showAuthTab('login')"
+                        >
+                            登录
+                        </button>
+                        <button
+                            class="auth-tab"
+                            onclick="showAuthTab('register')"
+                        >
+                            注册
+                        </button>
+                    </div>
+                    <div
+                        id="authAlert"
+                        class="alert"
+                        style="display: none"
+                    ></div>
+                    <form id="authForm" onsubmit="handleAuth(event)">
+                        <input type="hidden" id="authMode" value="login" />
+                        <div class="form-group">
+                            <label>邮箱</label>
+                            <input
+                                type="email"
+                                id="email"
+                                required
+                                placeholder="请输入邮箱"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label>密码</label>
+                            <input
+                                type="password"
+                                id="password"
+                                required
+                                placeholder="请输入密码"
+                                minlength="6"
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                            style="width: 100%"
+                        >
+                            确定
+                        </button>
+                    </form>
+                    <p style="margin-top: 20px; font-size: 12px; color: #999">
+                        首次注册将自动创建账户，数据将同步到云端
+                    </p>
+                </div>
+            </div>
+
+            <div id="mainPage" style="display: none">
+                <header>
+                    <h1>🏠 家庭资产管理</h1>
+                    <div class="total-assets">
+                        ¥ <span id="totalAmount">0</span>
+                    </div>
+                    <div class="sync-status" id="syncStatus">
+                        <span class="synced">● 已同步</span>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-email" id="userEmail"></span>
+                        <button
+                            class="btn btn-secondary"
+                            onclick="logout()"
+                            style="padding: 5px 10px; font-size: 12px"
+                        >
+                            退出
+                        </button>
+                    </div>
+                </header>
+
+                <div class="container">
+                    <div class="stats-grid" id="statsGrid"></div>
+
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>📈 按人员统计</h2>
+                        </div>
+                        <div class="chart-container" id="personChart"></div>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>💰 资产列表</h2>
+                            <div style="display: flex; gap: 10px">
+                                <button
+                                    class="btn btn-secondary"
+                                    onclick="importData()"
+                                >
+                                    导入
+                                </button>
+                                <button
+                                    class="btn btn-primary"
+                                    onclick="openModal()"
+                                >
+                                    + 添加
+                                </button>
+                            </div>
+                        </div>
+                        <div
+                            style="
+                                margin-bottom: 15px;
+                                display: flex;
+                                gap: 10px;
+                                flex-wrap: wrap;
+                            "
+                        >
+                            <select
+                                id="filterPerson"
+                                onchange="renderAssets()"
+                                style="
+                                    padding: 8px 12px;
+                                    border-radius: 8px;
+                                    border: 1px solid #ddd;
+                                "
+                            >
+                                <option value="">全部人员</option>
+                                <option value="本人">本人</option>
+                                <option value="爸爸">爸爸</option>
+                                <option value="妈妈">妈妈</option>
+                                <option value="爷爷">爷爷</option>
+                            </select>
+                            <select
+                                id="filterType"
+                                onchange="renderAssets()"
+                                style="
+                                    padding: 8px 12px;
+                                    border-radius: 8px;
+                                    border: 1px solid #ddd;
+                                "
+                            >
+                                <option value="">全部类型</option>
+                                <option value="存款">存款</option>
+                                <option value="理财">理财</option>
+                                <option value="欠款">欠款</option>
+                                <option value="大额存单">大额存单</option>
+                                <option value="存单">存单</option>
+                                <option value="活期+">活期+</option>
+                                <option value="零钱通">零钱通</option>
+                            </select>
+                        </div>
+                        <div style="overflow-x: auto">
+                            <table class="asset-table">
+                                <thead>
+                                    <tr>
+                                        <th>产品</th>
+                                        <th>所有人</th>
+                                        <th>银行</th>
+                                        <th>灵活</th>
+                                        <th>性质</th>
+                                        <th>数额</th>
+                                        <th>期限</th>
+                                        <th>利率</th>
+                                        <th>开始时间</th>
+                                        <th>结束时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="assetTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div
+                            id="emptyState"
+                            class="empty-state"
+                            style="display: none"
+                        >
+                            暂无资产数据，点击上方按钮添加
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>📊 汇总统计</h2>
+                            <div style="display: flex; gap: 10px">
+                                <button
+                                    class="btn btn-secondary"
+                                    onclick="exportData()"
+                                >
+                                    导出
+                                </button>
+                                <button
+                                    class="btn btn-outline"
+                                    onclick="loadDemoData()"
+                                >
+                                    加载示例
+                                </button>
+                            </div>
+                        </div>
+                        <div id="summaryStats"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal" id="assetModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 id="modalTitle">添加资产</h2>
+                        <button class="close-btn" onclick="closeModal()">
+                            &times;
+                        </button>
+                    </div>
+                    <form id="assetForm" onsubmit="saveAsset(event)">
+                        <input type="hidden" id="editId" />
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>产品名称 *</label>
+                                <input
+                                    type="text"
+                                    id="product"
+                                    required
+                                    placeholder="如：定期存款"
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label>所有人 *</label>
+                                <select id="owner" required>
+                                    <option value="本人">本人</option>
+                                    <option value="爸爸">爸爸</option>
+                                    <option value="妈妈">妈妈</option>
+                                    <option value="爷爷">爷爷</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>银行/机构 *</label>
+                                <input
+                                    type="text"
+                                    id="bank"
+                                    required
+                                    placeholder="如：众邦"
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label>灵活度 *</label>
+                                <select id="flexibility" required>
+                                    <option value="定期">定期</option>
+                                    <option value="活期">活期</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>性质 *</label>
+                                <select id="nature" required>
+                                    <option value="存款">存款</option>
+                                    <option value="理财">理财</option>
+                                    <option value="欠款">欠款</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>数额 (元) *</label>
+                                <input
+                                    type="number"
+                                    id="amount"
+                                    required
+                                    placeholder="如：100000"
+                                />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>期限</label>
+                                <div style="display: flex; gap: 5px">
+                                    <input
+                                        type="number"
+                                        id="termValue"
+                                        placeholder="如：5"
+                                        style="width: 60%"
+                                    />
+                                    <select id="termUnit" style="width: 40%">
+                                        <option value="">无</option>
+                                        <option value="年">年</option>
+                                        <option value="月">月</option>
+                                        <option value="日">日</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>年利率 (%) *</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    id="rate"
+                                    required
+                                    placeholder="如：3.65"
+                                />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>开始时间</label>
+                                <input type="date" id="startDate" />
+                            </div>
+                            <div class="form-group">
+                                <label>结束时间</label>
+                                <input type="date" id="endDate" />
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button
+                                type="button"
+                                class="btn btn-secondary"
+                                onclick="closeModal()"
+                            >
+                                取消
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                保存
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <input
+                type="file"
+                id="importFile"
+                accept=".csv"
+                style="display: none"
+                onchange="handleImport(event)"
+            />
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script>
+            const SUPABASE_URL = "https://xmiwwjyzdiezsfdiqxdz.supabase.co";
+            const SUPABASE_ANON_KEY =
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtaXd3anl6ZGllenNmZGlxeGR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4MTU2MzMsImV4cCI6MjA4NDM5MTYzM30.AfOJNo-BeaZIrJ1DgzGya4xU7whLbfNazVZ-wTDd7kU";
+
+            supabase = window.supabase.createClient(
+                SUPABASE_URL,
+                SUPABASE_ANON_KEY
+            );
+
+            let assets = [];
+            let currentUser = null;
+
+            const demoData = [
+                {
+                    product: "大额存单",
+                    owner: "本人",
+                    bank: "众邦",
+                    flexibility: "定期",
+                    nature: "存款",
+                    amount: 200000,
+                    term: "5年",
+                    startDate: "2024-06-24",
+                    endDate: "2029-06-24",
+                    rate: "3.65",
+                },
+                {
+                    product: "定期存款",
+                    owner: "本人",
+                    bank: "众邦",
+                    flexibility: "定期",
+                    nature: "存款",
+                    amount: 20000,
+                    term: "5年",
+                    startDate: "2024-05-29",
+                    endDate: "2029-05-29",
+                    rate: "4.53",
+                },
+                {
+                    product: "定期存款",
+                    owner: "本人",
+                    bank: "众邦",
+                    flexibility: "定期",
+                    nature: "存款",
+                    amount: 50000,
+                    term: "3年",
+                    startDate: "2024-05-29",
+                    endDate: "2029-05-29",
+                    rate: "4.33",
+                },
+                {
+                    product: "定期存款",
+                    owner: "本人",
+                    bank: "众邦",
+                    flexibility: "定期",
+                    nature: "存款",
+                    amount: 30000,
+                    term: "5年",
+                    startDate: "2025-11-23",
+                    endDate: "2030-11-23",
+                    rate: "3.05",
+                },
+                {
+                    product: "定期存款",
+                    owner: "本人",
+                    bank: "华通",
+                    flexibility: "定期",
+                    nature: "存款",
+                    amount: 50000,
+                    term: "5年",
+                    startDate: "2024-11-29",
+                    endDate: "2029-11-29",
+                    rate: "3.00",
+                },
+                {
+                    product: "定期存款",
+                    owner: "本人",
+                    bank: "华瑞",
+                    flexibility: "定期",
+                    nature: "存款",
+                    amount: 60000,
+                    term: "5年",
+                    startDate: "2024-12-04",
+                    endDate: "2029-12-04",
+                    rate: "2.85",
+                },
+                {
+                    product: "定期存款",
+                    owner: "本人",
+                    bank: "苏银",
+                    flexibility: "定期",
+                    nature: "理财",
+                    amount: 100000,
+                    term: "6月",
+                    startDate: "2024-10-30",
+                    endDate: "2025-12-02",
+                    rate: "3.05",
+                },
+                {
+                    product: "欠款",
+                    owner: "本人",
+                    bank: "梅姐",
+                    flexibility: "/",
+                    nature: "欠款",
+                    amount: 50000,
+                    term: "",
+                    startDate: "",
+                    endDate: "",
+                    rate: "",
+                },
+                {
+                    product: "欠款",
+                    owner: "本人",
+                    bank: "果真",
+                    flexibility: "/",
+                    nature: "欠款",
+                    amount: 190000,
+                    term: "5年",
+                    startDate: "",
+                    endDate: "",
+                    rate: "",
+                },
+                {
+                    product: "定期存款",
+                    owner: "爸爸",
+                    bank: "众邦",
+                    flexibility: "定期",
+                    nature: "存款",
+                    amount: 100000,
+                    term: "5年",
+                    startDate: "2024-12-04",
+                    endDate: "2029-12-04",
+                    rate: "2.85",
+                },
+                {
+                    product: "定期存款",
+                    owner: "爸爸",
+                    bank: "微众",
+                    flexibility: "定期",
+                    nature: "理财",
+                    amount: 470000,
+                    term: "",
+                    startDate: "",
+                    endDate: "",
+                    rate: "3.00",
+                },
+                {
+                    product: "存单",
+                    owner: "爷爷",
+                    bank: "农商",
+                    flexibility: "定期",
+                    nature: "存款",
+                    amount: 10000,
+                    term: "",
+                    startDate: "",
+                    endDate: "",
+                    rate: "",
+                },
+                {
+                    product: "活期+",
+                    owner: "本人",
+                    bank: "微众",
+                    flexibility: "活期",
+                    nature: "理财",
+                    amount: 20000,
+                    term: "",
+                    startDate: "",
+                    endDate: "",
+                    rate: "3.00",
+                },
+                {
+                    product: "零钱通",
+                    owner: "妈妈",
+                    bank: "微信",
+                    flexibility: "活期",
+                    nature: "理财",
+                    amount: 50000,
+                    term: "",
+                    startDate: "",
+                    endDate: "",
+                    rate: "",
+                },
+            ];
+
+            async function init() {
+                const {
+                    data: { session },
+                } = await supabase.auth.getSession();
+
+                if (session) {
+                    currentUser = session.user;
+                    showMainPage();
+                    await loadAssets();
+                    subscribeToChanges();
+                } else {
+                    showAuthPage();
+                }
+
+                document.getElementById("loading").style.display = "none";
+            }
+
+            function showAuthPage() {
+                document.getElementById("authPage").style.display = "block";
+                document.getElementById("mainPage").style.display = "none";
+            }
+
+            function showMainPage() {
+                document.getElementById("authPage").style.display = "none";
+                document.getElementById("mainPage").style.display = "block";
+                document.getElementById("userEmail").textContent =
+                    currentUser.email;
+            }
+
+            function showAuthTab(tab) {
+                document
+                    .querySelectorAll(".auth-tab")
+                    .forEach((t) => t.classList.remove("active"));
+                event.target.classList.add("active");
+                document.getElementById("authMode").value = tab;
+                document.getElementById("authAlert").style.display = "none";
+            }
+
+            function showAlert(message, type = "error") {
+                const alert = document.getElementById("authAlert");
+                alert.textContent = message;
+                alert.className = `alert alert-${type}`;
+                alert.style.display = "block";
+            }
+
+            async function handleAuth(e) {
+                e.preventDefault();
+                const email = document.getElementById("email").value;
+                const password = document.getElementById("password").value;
+                const mode = document.getElementById("authMode").value;
+
+                try {
+                    if (mode === "login") {
+                        const { data, error } =
+                            await supabase.auth.signInWithPassword({
+                                email,
+                                password,
+                            });
+                        if (error) throw error;
+                        currentUser = data.user;
+                        showMainPage();
+                        await loadAssets();
+                        subscribeToChanges();
+                    } else {
+                        const { data, error } = await supabase.auth.signUp({
+                            email,
+                            password,
+                        });
+                        if (error) throw error;
+                        showAlert("注册成功！请登录", "success");
+                        document.querySelector(".auth-tab").click();
+                    }
+                } catch (error) {
+                    showAlert(error.message);
+                }
+            }
+
+            async function logout() {
+                await supabase.auth.signOut();
+                assets = [];
+                currentUser = null;
+                showAuthPage();
+            }
+
+            async function loadAssets() {
+                const { data, error } = await supabase
+                    .from("assets")
+                    .select("*")
+                    .order("created_at", { ascending: false });
+
+                if (error) {
+                    console.error("加载数据失败:", error);
+                    return;
+                }
+
+                assets = data.map((a) => ({
+                    id: a.id,
+                    product: a.product,
+                    owner: a.owner,
+                    bank: a.bank,
+                    flexibility: a.flexibility,
+                    nature: a.nature,
+                    amount: parseFloat(a.amount),
+                    term: a.term,
+                    rate: a.rate,
+                    startDate: a.start_date,
+                    endDate: a.end_date,
+                }));
+
+                renderAll();
+            }
+
+            function subscribeToChanges() {
+                supabase
+                    .channel("assets_changes")
+                    .on(
+                        "postgres_changes",
+                        { event: "*", schema: "public", table: "assets" },
+                        (payload) => {
+                            loadAssets();
+                            updateSyncStatus("syncing");
+                            setTimeout(() => updateSyncStatus("synced"), 1000);
+                        },
+                    )
+                    .subscribe();
+            }
+
+            function updateSyncStatus(status) {
+                const el = document.getElementById("syncStatus");
+                if (status === "synced") {
+                    el.innerHTML = '<span class="synced">● 已同步</span>';
+                } else if (status === "syncing") {
+                    el.innerHTML = '<span class="syncing">◉ 同步中...</span>';
+                } else {
+                    el.innerHTML = '<span class="offline">○ 离线模式</span>';
+                }
+            }
+
+            async function saveAsset(e) {
+                e.preventDefault();
+                const editId = document.getElementById("editId").value;
+
+                const termValue = document.getElementById("termValue").value;
+                const termUnit = document.getElementById("termUnit").value;
+                const term = termValue && termUnit ? termValue + termUnit : termValue;
+
+                const asset = {
+                    product: document.getElementById("product").value,
+                    owner: document.getElementById("owner").value,
+                    bank: document.getElementById("bank").value,
+                    flexibility: document.getElementById("flexibility").value,
+                    nature: document.getElementById("nature").value,
+                    amount: parseFloat(document.getElementById("amount").value),
+                    term: term,
+                    rate: document.getElementById("rate").value,
+                    start_date: document.getElementById("startDate").value,
+                    end_date: document.getElementById("endDate").value,
+                    user_id: currentUser.id,
+                };
+
+                updateSyncStatus("syncing");
+
+                try {
+                    if (editId) {
+                        const { error } = await supabase
+                            .from("assets")
+                            .update(asset)
+                            .eq("id", editId);
+                        if (error) throw error;
+                    } else {
+                        const { error } = await supabase
+                            .from("assets")
+                            .insert([asset]);
+                        if (error) throw error;
+                    }
+                    closeModal();
+                    await loadAssets();
+                    updateSyncStatus("synced");
+                } catch (error) {
+                    console.error("保存失败:", error);
+                    updateSyncStatus("offline");
+                    alert("保存失败: " + error.message);
+                }
+            }
+
+            async function deleteAsset(id) {
+                if (!confirm("确定要删除这条资产记录吗？")) return;
+
+                updateSyncStatus("syncing");
+                const { error } = await supabase
+                    .from("assets")
+                    .delete()
+                    .eq("id", id);
+
+                if (error) {
+                    console.error("删除失败:", error);
+                    updateSyncStatus("offline");
+                } else {
+                    await loadAssets();
+                    updateSyncStatus("synced");
+                }
+            }
+
+            function formatAmount(amount) {
+                return amount.toLocaleString("zh-CN");
+            }
+
+            function getOwnerTagClass(owner) {
+                const map = {
+                    "本人": "tag-me",
+                    "爸爸": "tag-dad",
+                    "妈妈": "tag-mom",
+                    "爷爷": "tag-grandpa",
+                };
+                return map[owner] || "tag-other";
+            }
+
+            function getBankTagClass(bank) {
+                const map = {
+                    众邦: "tag-cz",
+                    华通: "tag-ht",
+                    华瑞: "tag-hr",
+                    苏银: "tag-sy",
+                    微众: "tag-wd",
+                    农商: "tag-ns",
+                    微信: "tag-wx",
+                };
+                return map[bank] || "tag-other";
+            }
+
+            function getNatureTagClass(nature) {
+                const map = {
+                    存款: "tag-save",
+                    理财: "tag-invest",
+                    欠款: "tag-debt",
+                };
+                return map[nature] || "tag-other";
+            }
+
+            function renderStats() {
+                const total = assets.reduce(
+                    (sum, a) =>
+                        sum + (a.nature === "欠款" ? -a.amount : a.amount),
+                    0,
+                );
+                document.getElementById("totalAmount").textContent =
+                    formatAmount(total);
+
+                const byPerson = {};
+                assets.forEach((a) => {
+                    const val = a.nature === "欠款" ? -a.amount : a.amount;
+                    byPerson[a.owner] = (byPerson[a.owner] || 0) + val;
+                });
+
+                const statsHtml = `
+                <div class="stat-card">
+                    <h3>总资产</h3>
+                    <div class="value">¥${formatAmount(total)}</div>
+                </div>
+                <div class="stat-card by-person">
+                    <h3>爸爸</h3>
+                    <div class="value">¥${formatAmount(byPerson["爸爸"] || 0)}</div>
+                </div>
+                <div class="stat-card by-person">
+                    <h3>本人</h3>
+                    <div class="value">¥${formatAmount(byPerson["本人"] || 0)}</div>
+                </div>
+                <div class="stat-card by-person">
+                    <h3>妈妈</h3>
+                    <div class="value">¥${formatAmount(byPerson["妈妈"] || 0)}</div>
+                </div>
+                <div class="stat-card by-person">
+                    <h3>爷爷</h3>
+                    <div class="value">¥${formatAmount(byPerson["爷爷"] || 0)}</div>
+                </div>
+            `;
+                document.getElementById("statsGrid").innerHTML = statsHtml;
+
+                renderPersonChart(byPerson);
+                renderSummary(byPerson);
+            }
+
+            function renderPersonChart(byPerson) {
+                const container = document.getElementById("personChart");
+                const persons = ["本人", "爸爸", "妈妈", "爷爷"];
+                const values = persons.map((p) => byPerson[p] || 0);
+                const max = Math.max(...values, 1);
+
+                container.innerHTML = persons
+                    .map((p, i) => {
+                        const height = (values[i] / max) * 200;
+                        return `
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <div class="chart-bar" style="height: ${height}px;">${formatAmount(values[i])}</div>
+                        <div class="chart-label">${p}</div>
+                    </div>
+                `;
+                    })
+                    .join("");
+            }
+
+            function renderSummary(byPerson) {
+                const banks = {};
+                assets.forEach((a) => {
+                    if (a.nature !== "欠款") {
+                        banks[a.bank] = (banks[a.bank] || 0) + a.amount;
+                    }
+                });
+
+                const sortedBanks = Object.entries(banks).sort(
+                    (a, b) => b[1] - a[1],
+                );
+
+                const container = document.getElementById("summaryStats");
+                container.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                    <div>
+                        <h4 style="margin-bottom: 10px;">按人员分布</h4>
+                        ${Object.entries(byPerson)
+                            .map(
+                                ([k, v]) => `
+                            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                                <span>${k}</span>
+                                <span style="font-weight: bold;">¥${formatAmount(v)}</span>
+                            </div>
+                        `,
+                            )
+                            .join("")}
+                    </div>
+                    <div>
+                        <h4 style="margin-bottom: 10px;">按银行分布 (Top5)</h4>
+                        ${sortedBanks
+                            .slice(0, 5)
+                            .map(
+                                ([k, v]) => `
+                            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                                <span>${k}</span>
+                                <span style="font-weight: bold;">¥${formatAmount(v)}</span>
+                            </div>
+                        `,
+                            )
+                            .join("")}
+                    </div>
+                </div>
+            `;
+            }
+
+            function renderAssets() {
+                const filterPerson =
+                    document.getElementById("filterPerson").value;
+                const filterType = document.getElementById("filterType").value;
+
+                let filtered = assets.filter((a) => {
+                    if (filterPerson && a.owner !== filterPerson) return false;
+                    if (
+                        filterType &&
+                        a.product !== filterType &&
+                        a.nature !== filterType
+                    )
+                        return false;
+                    return true;
+                });
+
+                const tbody = document.getElementById("assetTableBody");
+                const emptyState = document.getElementById("emptyState");
+
+                if (filtered.length === 0) {
+                    tbody.innerHTML = "";
+                    emptyState.style.display = "block";
+                    return;
+                }
+
+                emptyState.style.display = "none";
+                tbody.innerHTML = filtered
+                    .map(
+                        (a) => `
+                <tr>
+                    <td>${a.product}</td>
+                    <td><span class="tag ${getOwnerTagClass(a.owner)}">${a.owner}</span></td>
+                    <td><span class="tag ${getBankTagClass(a.bank)}">${a.bank}</span></td>
+                    <td>${a.flexibility}</td>
+                    <td><span class="tag ${getNatureTagClass(a.nature)}">${a.nature}</span></td>
+                    <td class="amount">¥${formatAmount(a.amount)}</td>
+                    <td>${a.term || "-"}</td>
+                    <td class="rate">${a.rate ? a.rate + "%" : "-"}</td>
+                    <td>${a.start_date || "-"}</td>
+                    <td>${a.end_date || "-"}</td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn btn-secondary" onclick="editAsset('${a.id}')">编辑</button>
+                            <button class="btn btn-danger" onclick="deleteAsset('${a.id}')">删除</button>
+                        </div>
+                    </td>
+                </tr>
+            `,
+                    )
+                    .join("");
+            }
+
+            function openModal(asset = null) {
+                const modal = document.getElementById("assetModal");
+                const form = document.getElementById("assetForm");
+                const title = document.getElementById("modalTitle");
+
+                form.reset();
+                document.getElementById("editId").value = "";
+
+                if (asset) {
+                    title.textContent = "编辑资产";
+                    document.getElementById("editId").value = asset.id;
+                    document.getElementById("product").value = asset.product;
+                    document.getElementById("owner").value = asset.owner;
+                    document.getElementById("bank").value = asset.bank;
+                    document.getElementById("flexibility").value =
+                        asset.flexibility;
+                    document.getElementById("nature").value = asset.nature;
+                    document.getElementById("amount").value = asset.amount;
+                    
+                    const termMatch = (asset.term || "").match(/(\d*)([年月日]*)/);
+                    document.getElementById("termValue").value = termMatch ? termMatch[1] : "";
+                    document.getElementById("termUnit").value = termMatch && termMatch[2] ? termMatch[2] : "";
+                    
+                    document.getElementById("rate").value = asset.rate || "";
+                    document.getElementById("startDate").value =
+                        asset.start_date || "";
+                    document.getElementById("endDate").value =
+                        asset.end_date || "";
+                } else {
+                    title.textContent = "添加资产";
+                }
+
+                modal.classList.add("active");
+            }
+
+            function closeModal() {
+                document
+                    .getElementById("assetModal")
+                    .classList.remove("active");
+            }
+
+            function editAsset(id) {
+                const asset = assets.find((a) => a.id === id);
+                if (asset) openModal(asset);
+            }
+
+            async function loadDemoData() {
+                if (!confirm("这将覆盖当前数据，确定继续吗？")) return;
+
+                updateSyncStatus("syncing");
+
+                for (const a of demoData) {
+                    await supabase.from("assets").insert([
+                        {
+                            ...a,
+                            start_date: a.startDate,
+                            end_date: a.endDate,
+                            user_id: currentUser.id,
+                        },
+                    ]);
+                }
+
+                await loadAssets();
+                updateSyncStatus("synced");
+            }
+
+            function exportData() {
+                let csv =
+                    "产品,所有人,银行,灵活,性质,数额,期限,开始时间,结束时间,利率\n";
+                assets.forEach((a) => {
+                    csv += `${a.product},${a.owner},${a.bank},${a.flexibility},${a.nature},${a.amount},${a.term},${a.startDate},${a.endDate},${a.rate}\n`;
+                });
+
+                const blob = new Blob([csv], {
+                    type: "text/csv;charset=utf-8;",
+                });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "家庭资产导出.csv";
+                link.click();
+            }
+
+            function importData() {
+                document.getElementById("importFile").click();
+            }
+
+            async function handleImport(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const text = await file.text();
+                const lines = text.split("\n").filter((l) => l.trim());
+                
+                if (lines.length < 2) {
+                    alert("文件没有有效数据");
+                    e.target.value = "";
+                    return;
+                }
+
+                const headers = lines[0].split(",").map((h) => h.trim());
+
+                const fieldMap = {
+                    产品: "product",
+                    所有人: "owner",
+                    银行: "bank",
+                    灵活: "flexibility",
+                    性质: "nature",
+                    数额: "amount",
+                    期限: "term",
+                    利率: "rate",
+                    开始时间: "startDate",
+                    结束时间: "endDate",
+                };
+
+                if (
+                    !confirm(
+                        `确定要导入 ${lines.length - 1} 条数据吗？这将追加到现有数据中。`,
+                    )
+                )
+                    return;
+
+                updateSyncStatus("syncing");
+                let imported = 0;
+                let errors = [];
+
+                for (let i = 1; i < lines.length; i++) {
+                    try {
+                        const values = lines[i].split(",");
+                        const asset = { user_id: currentUser.id };
+
+                        headers.forEach((h, idx) => {
+                            const val = values[idx]?.trim();
+                            const field = fieldMap[h];
+                            if (!field) return;
+
+                            if (field === "amount") {
+                                asset[field] = parseFloat(val) || 0;
+                            } else if (field === "rate") {
+                                asset[field] = val.replace("%", "");
+                            } else if (field === "startDate") {
+                                asset["start_date"] = val;
+                            } else if (field === "endDate") {
+                                asset["end_date"] = val;
+                            } else {
+                                asset[field] = val;
+                            }
+                        });
+
+                        if (asset.product && asset.owner && asset.bank) {
+                            const { error } = await supabase.from("assets").insert([asset]);
+                            if (error) throw new Error(error.message);
+                            imported++;
+                        }
+                    } catch (err) {
+                        errors.push(`第${i}行: ${err.message}`);
+                    }
+                }
+
+                await loadAssets();
+                updateSyncStatus("synced");
+                
+                if (errors.length > 0) {
+                    alert(`导入完成，但有${errors.length}条错误：\n${errors.join('\n')}`);
+                } else {
+                    alert(`成功导入 ${imported} 条数据`);
+                }
+                e.target.value = "";
+            }
+
+            function renderAll() {
+                renderStats();
+                renderAssets();
+            }
+
+            document
+                .getElementById("assetModal")
+                .addEventListener("click", (e) => {
+                    if (e.target.id === "assetModal") closeModal();
+                });
+
+            if ("serviceWorker" in navigator) {
+                navigator.serviceWorker.register("sw.js");
+            }
+
+            init();
+        </script>
+    </body>
+</html>
