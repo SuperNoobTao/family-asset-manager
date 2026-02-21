@@ -276,6 +276,10 @@
                 background: #e3f2fd;
                 color: #1565c0;
             }
+            .tag-credit {
+                background: #e8f5e9;
+                color: #2e7d32;
+            }
             .tag-debt {
                 background: #ffebee;
                 color: #c62828;
@@ -1083,7 +1087,7 @@
 
                     <div class="section">
                         <div class="section-header">
-                            <h2>📈 按人员统计</h2>
+                            <h2>📈 按人员净资产统计</h2>
                         </div>
                         <div class="chart-container" id="personChart"></div>
                     </div>
@@ -1126,7 +1130,8 @@
                                 <option value="">全部类型</option>
                                 <option value="存款">存款</option>
                                 <option value="理财">理财</option>
-                                <option value="欠款">欠款</option>
+                                <option value="债权">债权</option>
+                                <option value="负债">负债</option>
                                 <option value="大额存单">大额存单</option>
                                 <option value="存单">存单</option>
                                 <option value="活期+">活期+</option>
@@ -1233,7 +1238,8 @@
                                 <select id="nature" required>
                                     <option value="存款">存款</option>
                                     <option value="理财">理财</option>
-                                    <option value="欠款">欠款</option>
+                                    <option value="债权">债权</option>
+                                    <option value="负债">负债</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -1419,19 +1425,27 @@
                     return;
                 }
 
-                assets = data.map((a) => ({
-                    id: a.id,
-                    product: a.product,
-                    owner: a.owner,
-                    bank: a.bank,
-                    flexibility: a.flexibility,
-                    nature: a.nature,
-                    amount: parseFloat(a.amount),
-                    term: a.term,
-                    rate: a.rate,
-                    startDate: a.start_date,
-                    endDate: a.end_date,
-                }));
+                assets = data.map((a) => {
+                    const nature = normalizeNature(a.nature);
+                    const amount = normalizeAmount(
+                        nature,
+                        parseFloat(a.amount),
+                    );
+
+                    return {
+                        id: a.id,
+                        product: a.product,
+                        owner: a.owner,
+                        bank: a.bank,
+                        flexibility: a.flexibility,
+                        nature,
+                        amount,
+                        term: a.term,
+                        rate: a.rate,
+                        startDate: a.start_date,
+                        endDate: a.end_date,
+                    };
+                });
 
                 renderAll();
             }
@@ -1469,14 +1483,21 @@
                 const termValue = document.getElementById("termValue").value;
                 const termUnit = document.getElementById("termUnit").value;
                 const term = termValue && termUnit ? termValue + termUnit : termValue;
+                const nature = normalizeNature(
+                    document.getElementById("nature").value,
+                );
+                const amount = normalizeAmount(
+                    nature,
+                    parseFloat(document.getElementById("amount").value),
+                );
 
                 const asset = {
                     product: document.getElementById("product").value,
                     owner: document.getElementById("owner").value,
                     bank: document.getElementById("bank").value,
                     flexibility: document.getElementById("flexibility").value,
-                    nature: document.getElementById("nature").value,
-                    amount: parseFloat(document.getElementById("amount").value),
+                    nature,
+                    amount,
                     term: term,
                     rate: document.getElementById("rate").value,
                     start_date: document.getElementById("startDate").value,
@@ -1554,33 +1575,41 @@
                 return map[bank] || "tag-other";
             }
 
+            function normalizeNature(nature) {
+                return nature === "欠款" ? "债权" : nature;
+            }
+
+            function normalizeAmount(nature, amount) {
+                const parsed = parseFloat(amount);
+                if (Number.isNaN(parsed)) return 0;
+                if (nature === "负债") return -Math.abs(parsed);
+                return parsed;
+            }
+
             function getNatureTagClass(nature) {
                 const map = {
                     存款: "tag-save",
                     理财: "tag-invest",
+                    债权: "tag-credit",
+                    负债: "tag-debt",
                     欠款: "tag-debt",
                 };
                 return map[nature] || "tag-other";
             }
 
             function renderStats() {
-                const total = assets.reduce(
-                    (sum, a) =>
-                        sum + (a.nature === "欠款" ? -a.amount : a.amount),
-                    0,
-                );
+                const total = assets.reduce((sum, a) => sum + a.amount, 0);
                 document.getElementById("totalAmount").textContent =
                     formatAmount(total);
 
                 const byPerson = {};
                 assets.forEach((a) => {
-                    const val = a.nature === "欠款" ? -a.amount : a.amount;
-                    byPerson[a.owner] = (byPerson[a.owner] || 0) + val;
+                    byPerson[a.owner] = (byPerson[a.owner] || 0) + a.amount;
                 });
 
                 const statsHtml = `
                 <div class="stat-card">
-                    <h3>总资产</h3>
+                    <h3>净资产</h3>
                     <div class="value">¥${formatAmount(total)}</div>
                 </div>
                 <div class="stat-card by-person">
@@ -1628,9 +1657,7 @@
             function renderSummary(byPerson) {
                 const banks = {};
                 assets.forEach((a) => {
-                    if (a.nature !== "欠款") {
-                        banks[a.bank] = (banks[a.bank] || 0) + a.amount;
-                    }
+                    banks[a.bank] = (banks[a.bank] || 0) + a.amount;
                 });
 
                 const sortedBanks = Object.entries(banks).sort(
@@ -1641,7 +1668,7 @@
                 container.innerHTML = `
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
                     <div>
-                        <h4 style="margin-bottom: 10px;">按人员分布</h4>
+                        <h4 style="margin-bottom: 10px;">按人员净资产分布</h4>
                         ${Object.entries(byPerson)
                             .map(
                                 ([k, v]) => `
@@ -1840,6 +1867,8 @@
 
                             if (field === "amount") {
                                 asset[field] = parseFloat(val) || 0;
+                            } else if (field === "nature") {
+                                asset[field] = normalizeNature(val);
                             } else if (field === "rate") {
                                 asset[field] = val.replace("%", "");
                             } else if (field === "startDate") {
@@ -1850,6 +1879,14 @@
                                 asset[field] = val;
                             }
                         });
+
+                        if (asset.nature) {
+                            asset.nature = normalizeNature(asset.nature);
+                        }
+                        asset.amount = normalizeAmount(
+                            asset.nature,
+                            asset.amount,
+                        );
 
                         if (asset.product && asset.owner && asset.bank) {
                             const { error } = await supabase.from("assets").insert([asset]);
